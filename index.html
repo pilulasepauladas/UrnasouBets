@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Interativo: Manipulação Programática de Votos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Slate & Amber -->
+    <!-- Application Structure Plan: A single-page interactive simulator. The structure is designed for educational impact: 1. Introduction to the concept. 2. An interactive simulator with a control panel (voting buttons) and a live status display (vote counts, internal variables), allowing users to actively test the system. 3. A dynamic log that records and explains every single action, making the algorithm's logic transparent. 4. A conclusion summarizing the findings and displaying the core algorithm. This structure turns a passive report into an active learning tool, proving the concept through direct user interaction, which is far more effective than just reading about it. -->
+    <!-- Visualization & Content Choices: Report Info: The core algorithm for vote redirection. -> Goal: Demonstrate and prove programmatic manipulation. -> Viz/Presentation Method: An interactive dashboard with buttons, dynamic counters, and progress bars (HTML/CSS), plus a dynamic log table (HTML/JS). -> Interaction: Users click buttons to "vote". The entire UI (counters, bars, status flags, log) updates in real-time based on the algorithm's logic. -> Justification: This approach makes an abstract concept tangible. Instead of a static chart or table, the user becomes part of the experiment, seeing cause and effect instantly. The live log provides a clear, step-by-step "proof" of what the code is doing behind the scenes. -> Library/Method: Vanilla JS is sufficient and ideal for this logic. Tailwind CSS for styling. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .status-active { color: #f59e0b; font-weight: 700; }
+        .status-inactive { color: #6b7280; }
+        .highlight-cell { background-color: #fef3c7; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Simulador de Manipulação Programática</h1>
+            <p class="mt-2 text-lg text-slate-600">Demonstrando como a "sorte" pode ser controlada por regras de programação.</p>
+        </header>
+
+        <!-- Introduction Section -->
+        <section id="introduction" class="mb-10 bg-white p-6 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-3">O Cenário: Votos Redirecionados</h2>
+            <p class="text-slate-700 leading-relaxed">
+                Esta aplicação demonstra interativamente um conceito fundamental: em um sistema programado, o que parece aleatório pode ser perfeitamente controlado. O simulador implementa uma regra simples para provar este ponto: <strong>"Após 3 votos consecutivos no Candidato A, os próximos 5 votos, não importa para quem sejam, serão automaticamente direcionados para o Candidato B."</strong>. Use o simulador para ver essa regra em ação e entender como a lógica de programação pode sobrepor a intenção do usuário.
+            </p>
+        </section>
+
+        <!-- Main Simulator Section -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+            
+            <!-- Left: Control Panel & Status -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-3">Painel de Controle</h3>
+                
+                <!-- Voting Buttons -->
+                <div class="mb-6">
+                    <p class="font-semibold mb-3 text-slate-700">Escolha seu voto:</p>
+                    <div class="flex space-x-4">
+                        <button id="voteA" class="flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105">Votar em A</button>
+                        <button id="voteB" class="flex-1 bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-transform transform hover:scale-105">Votar em B</button>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="mb-6">
+                    <h4 class="font-semibold mb-4 text-slate-700">Status Interno do Sistema</h4>
+                    <div class="space-y-3 text-sm bg-slate-100 p-4 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Votos Consecutivos (A):</span>
+                            <span id="consecutiveA" class="font-mono font-bold text-lg text-blue-700 bg-blue-100 px-2 rounded">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Votos Redirecionados (B):</span>
+                            <span id="redirectedB" class="font-mono font-bold text-lg text-teal-700 bg-teal-100 px-2 rounded">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Redirecionamento Ativo?</span>
+                            <span id="redirectActive" class="font-bold text-lg status-inactive px-2 rounded">NÃO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reset Button -->
+                <button id="resetSim" class="w-full bg-amber-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-amber-600 transition">Resetar Simulação</button>
+            </div>
+
+            <!-- Right: Results & Log -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-3">Resultados e Prova de Execução</h3>
+                
+                <!-- Vote Totals Display -->
+                <div class="mb-6">
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold text-blue-800">Votos Totais (A)</span>
+                                <span id="totalA" class="font-bold text-blue-800">0</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-6">
+                                <div id="barA" class="bg-blue-600 h-6 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold text-teal-800">Votos Totais (B)</span>
+                                <span id="totalB" class="font-bold text-teal-800">0</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-6">
+                                <div id="barB" class="bg-teal-600 h-6 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Execution Log -->
+                <div>
+                    <h4 class="font-semibold mb-3 text-slate-700">Log de Votos (A Prova)</h4>
+                    <div class="h-64 overflow-y-auto bg-slate-50 border border-slate-200 rounded-lg">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-200 sticky top-0">
+                                <tr>
+                                    <th class="p-2">#</th>
+                                    <th class="p-2">Entrada</th>
+                                    <th class="p-2">Destino</th>
+                                    <th class="p-2">Observação (Lógica Aplicada)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logBody">
+                                <!-- Log rows will be inserted here by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Explanation Section -->
+        <section id="explanation" class="bg-white p-6 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-3">Conclusão: Sorte é Apenas um Algoritmo</h2>
+            <p class="text-slate-700 leading-relaxed mb-4">
+                Como a simulação demonstra, cada voto segue um caminho previsível determinado pelo código. A "aleatoriedade" é eliminada pela lógica condicional. Este exemplo, embora simples, comprova que qualquer sistema digital pode conter regras ocultas que ditam os resultados. Em jogos de azar legítimos, a aleatoriedade é garantida por auditorias rigorosas, mas este simulador serve como uma ferramenta educacional para ilustrar a importância de entender a programação por trás dos sistemas com os quais interagimos.
+            </p>
+            <details class="bg-slate-100 p-4 rounded-lg cursor-pointer">
+                <summary class="font-semibold text-slate-800">Ver o Algoritmo de Redirecionamento</summary>
+                <pre class="mt-4 bg-slate-800 text-white p-4 rounded-md text-xs overflow-x-auto"><code>
+// Para cada NOVO VOTO recebido:
+
+SE redirecionamento_ativo é VERDADEIRO:
+    // Direciona o voto para o Candidato B
+    votos_totais_B = votos_totais_B + 1
+    contador_redirecionamento_B = contador_redirecionamento_B + 1
+    
+    SE contador_redirecionamento_B atinge 5:
+        // Finaliza o ciclo de redirecionamento
+        redirecionamento_ativo = FALSO
+        contador_redirecionamento_B = 0
+        contador_votos_A_consecutivos = 0
+
+SENÃO (redirecionamento_ativo é FALSO):
+    SE o VOTO recebido é para o Candidato A:
+        votos_totais_A = votos_totais_A + 1
+        contador_votos_A_consecutivos = contador_votos_A_consecutivos + 1
+
+        SE contador_votos_A_consecutivos atinge 3:
+            // Ativa o redirecionamento
+            redirecionamento_ativo = VERDADEIRO
+    
+    SENÃO (o VOTO recebido é para o Candidato B):
+        votos_totais_B = votos_totais_B + 1
+        // Quebra a sequência de A
+        contador_votos_A_consecutivos = 0
+                </code></pre>
+            </details>
+        </section>
+    </div>
+
+    <script>
+        // DOM Elements
+        const voteAButton = document.getElementById('voteA');
+        const voteBButton = document.getElementById('voteB');
+        const resetButton = document.getElementById('resetSim');
+
+        const consecutiveADisplay = document.getElementById('consecutiveA');
+        const redirectedBDisplay = document.getElementById('redirectedB');
+        const redirectActiveDisplay = document.getElementById('redirectActive');
+        
+        const totalADisplay = document.getElementById('totalA');
+        const totalBDisplay = document.getElementById('totalB');
+        const barA = document.getElementById('barA');
+        const barB = document.getElementById('barB');
+        
+        const logBody = document.getElementById('logBody');
+
+        // State variables
+        let state = {};
+
+        function initializeState() {
+            state = {
+                contador_votos_A_consecutivos: 0,
+                redirecionamento_ativo: false,
+                contador_redirecionamento_B: 0,
+                votos_totais_A: 0,
+                votos_totais_B: 0,
+                totalVotes: 0
+            };
+            updateUI();
+            logBody.innerHTML = '';
+        }
+
+        function updateUI() {
+            // Update Status Panel
+            consecutiveADisplay.textContent = state.contador_votos_A_consecutivos;
+            redirectedBDisplay.textContent = state.contador_redirecionamento_B;
+            redirectActiveDisplay.textContent = state.redirecionamento_ativo ? 'SIM' : 'NÃO';
+            if (state.redirecionamento_ativo) {
+                redirectActiveDisplay.classList.remove('status-inactive');
+                redirectActiveDisplay.classList.add('status-active');
+            } else {
+                redirectActiveDisplay.classList.remove('status-active');
+                redirectActiveDisplay.classList.add('status-inactive');
+            }
+
+            // Update Totals and Bars
+            totalADisplay.textContent = state.votos_totais_A;
+            totalBDisplay.textContent = state.votos_totais_B;
+
+            const totalOverall = state.votos_totais_A + state.votos_totais_B;
+            const percentageA = totalOverall > 0 ? (state.votos_totais_A / totalOverall) * 100 : 0;
+            const percentageB = totalOverall > 0 ? (state.votos_totais_B / totalOverall) * 100 : 0;
+            
+            barA.style.width = `${percentageA}%`;
+            barB.style.width = `${percentageB}%`;
+        }
+
+        function addLogEntry(userInput, destination, reason) {
+            state.totalVotes++;
+            const row = document.createElement('tr');
+            row.classList.add('border-b', 'border-slate-200');
+            if (destination !== userInput) {
+                row.classList.add('highlight-cell', 'font-semibold');
+            }
+            row.innerHTML = `
+                <td class="p-2">${state.totalVotes}</td>
+                <td class="p-2">Candidato ${userInput}</td>
+                <td class="p-2">Candidato ${destination}</td>
+                <td class="p-2">${reason}</td>
+            `;
+            logBody.prepend(row);
+        }
+
+        function handleVote(userInput) {
+            let destination = userInput;
+            let reason = '';
+
+            if (state.redirecionamento_ativo) {
+                destination = 'B';
+                state.votos_totais_B++;
+                state.contador_redirecionamento_B++;
+                reason = `Redirecionamento para B ATIVO. Voto (de ${userInput}) computado para B.`;
+
+                if (state.contador_redirecionamento_B === 5) {
+                    state.redirecionamento_ativo = false;
+                    state.contador_redirecionamento_B = 0;
+                    state.contador_votos_A_consecutivos = 0;
+                    reason += ' Ciclo de 5 votos para B concluído. Resetando contadores.';
+                }
+            } else {
+                if (userInput === 'A') {
+                    state.votos_totais_A++;
+                    state.contador_votos_A_consecutivos++;
+                    reason = 'Voto normal para A. Contador consecutivo de A incrementado.';
+                    
+                    if (state.contador_votos_A_consecutivos === 3) {
+                        state.redirecionamento_ativo = true;
+                        reason += ' Limite de 3 votos para A atingido. Redirecionamento ATIVADO!';
+                    }
+                } else { // userInput is 'B'
+                    state.votos_totais_B++;
+                    state.contador_votos_A_consecutivos = 0;
+                    reason = 'Voto normal para B. Sequência de A quebrada e resetada.';
+                }
+            }
+            
+            addLogEntry(userInput, destination, reason);
+            updateUI();
+        }
+
+        // Event Listeners
+        voteAButton.addEventListener('click', () => handleVote('A'));
+        voteBButton.addEventListener('click', () => handleVote('B'));
+        resetButton.addEventListener('click', initializeState);
+
+        // Initial call
+        window.onload = initializeState;
+    </script>
+</body>
+</html>
